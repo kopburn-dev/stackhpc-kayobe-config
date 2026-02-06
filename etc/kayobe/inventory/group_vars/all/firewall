@@ -127,6 +127,12 @@ stackhpc_common_firewalld_rules_template:
 ###############################################################################
 # Controller firewalld rules
 
+# Network on which designate-mdns listens for zone transfers (port 5354).
+# Defaults to public_net_name to match Kayobe's mapping of dns_interface.
+# Set to internal_net_name when using a local bind9 backend, to keep zone
+# transfer traffic internal and avoid exposing port 5354 publicly.
+stackhpc_designate_mdns_net_name: "{{ public_net_name }}"
+
 stackhpc_controller_firewalld_rules_template:
   # Overcloud Ironic
   - rules:
@@ -151,7 +157,7 @@ stackhpc_controller_firewalld_rules_template:
         network: "{{ provision_wl_net_name }}"
         state: enabled
     enabled: "{{ kolla_enable_ironic | bool }}"
-  # Designate
+  # Designate bind9: serves DNS on the public network.
   - rules:
       - port: 53/tcp
         network: "{{ public_net_name }}"
@@ -159,20 +165,17 @@ stackhpc_controller_firewalld_rules_template:
       - port: 53/udp
         network: "{{ public_net_name }}"
         state: enabled
+    enabled: "{{ kolla_enable_designate | bool }}"
+  # Designate mdns: zone transfers between nodes on the mdns network.
+  # By default mdns listens on the dns_interface (public_net_name in Kayobe).
+  # Set stackhpc_designate_mdns_net_name to internal_net_name when using a
+  # local bind9 backend to keep zone transfer traffic on the internal network.
+  - rules:
       - port: 5354/tcp
-        network: "{{ public_net_name }}"
+        network: "{{ stackhpc_designate_mdns_net_name }}"
         state: enabled
       - port: 5354/udp
-        network: "{{ public_net_name }}"
-        state: enabled
-      # Zone transfers between designate-mdns nodes also require port 5354
-      # on the internal network, in case dns_interface is overridden to use
-      # the internal network (e.g. when using a local bind9 backend).
-      - port: 5354/tcp
-        network: "{{ internal_net_name }}"
-        state: enabled
-      - port: 5354/udp
-        network: "{{ internal_net_name }}"
+        network: "{{ stackhpc_designate_mdns_net_name }}"
         state: enabled
     enabled: "{{ kolla_enable_designate | bool }}"
   # GENEVE
