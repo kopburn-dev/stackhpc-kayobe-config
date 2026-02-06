@@ -165,6 +165,15 @@ stackhpc_controller_firewalld_rules_template:
       - port: 5354/udp
         network: "{{ public_net_name }}"
         state: enabled
+      # Zone transfers between designate-mdns nodes also require port 5354
+      # on the internal network, in case dns_interface is overridden to use
+      # the internal network (e.g. when using a local bind9 backend).
+      - port: 5354/tcp
+        network: "{{ internal_net_name }}"
+        state: enabled
+      - port: 5354/udp
+        network: "{{ internal_net_name }}"
+        state: enabled
     enabled: "{{ kolla_enable_designate | bool }}"
   # GENEVE
   - rules:
