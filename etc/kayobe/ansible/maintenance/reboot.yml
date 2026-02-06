@@ -33,6 +33,7 @@
       become: true
       ansible.builtin.reboot:
         reboot_timeout: "{{ reboot_timeout_s }}"
+        post_reboot_delay: 30 # Extra delay to ensure SSH is working reliably
         search_paths:
           # Systems running molly-guard hang waiting for confirmation before rebooting without this.
           - /lib/molly-guard
